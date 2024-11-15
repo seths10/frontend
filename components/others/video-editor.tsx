@@ -431,7 +431,7 @@ const VideoEditor = () => {
             ))}
             <button
               onClick={addTextOverlay}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="flex items-center justify-center w-full gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
               <Plus size={20} /> Add Text Overlay
             </button>
