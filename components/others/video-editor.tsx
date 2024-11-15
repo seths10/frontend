@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Type, Mic, Save, X, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-// import { Alert, AlertDescription } from '../ui/alert';
 
 const VideoEditor = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -17,6 +16,7 @@ const VideoEditor = () => {
   const [audioSegments, setAudioSegments] = useState<Array<{
     file: File | null;
     delay: number;
+    previewUrl?: string;
   }>>([
     { file: null, delay: 0 }
   ]);
@@ -33,12 +33,13 @@ const VideoEditor = () => {
     }
   };
 
-  const handleAudioUpload = (index: any, e: any) => {
-    const file = e.target.files[0];
+  const handleAudioUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
+      const previewUrl = URL.createObjectURL(file);
       setAudioSegments(prev => {
         const newSegments = [...prev];
-        newSegments[index] = { ...newSegments[index], file };
+        newSegments[index] = { ...newSegments[index], file, previewUrl };
         return newSegments;
       });
     }
@@ -48,8 +49,13 @@ const VideoEditor = () => {
     setAudioSegments(prev => [...prev, { file: null, delay: 0 }]);
   };
 
-  const removeAudioSegment = (index: any) => {
-    setAudioSegments(prev => prev.filter((_, i) => i !== index));
+  const removeAudioSegment = (index: number) => {
+    setAudioSegments(prev => {
+      if (prev[index].previewUrl) {
+        URL.revokeObjectURL(prev[index].previewUrl);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const addTextOverlay = () => {
@@ -76,7 +82,6 @@ const VideoEditor = () => {
   const removeVideo = () => {
     setVideoFile(null);
     setVideoPreviewUrl('');
-    // Reset other states if needed
     setTextOverlays([{ text: '', startTime: 0, duration: 2, x: 100, y: 100 }]);
     setAudioSegments([{ file: null, delay: 0 }]);
   };
@@ -167,6 +172,16 @@ const VideoEditor = () => {
     }, 100);
   };
 
+  useEffect(() => {
+    return () => {
+      audioSegments.forEach(segment => {
+        if (segment.previewUrl) {
+          URL.revokeObjectURL(segment.previewUrl);
+        }
+      });
+    };
+  }, [audioSegments]);
+
   return (
     <div className="max-w-5xl mx-auto p-10">
       <h1 className='absolute top-5 tracking-wide left-10 text-center text-black font-semibold text-2xl'>mochi.</h1>
@@ -244,47 +259,73 @@ const VideoEditor = () => {
           </CardHeader>
           <CardContent>
             {audioSegments.map((segment, index) => (
-              <div key={index} className="flex items-center gap-4 mb-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Audio File {index + 1}
-                  </label>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => handleAudioUpload(index, e)}
-                    className="w-full"
-                  />
+              <div key={index} className="mb-6 p-4 border rounded-lg bg-gray-50">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-medium">Audio Segment {index + 1}</h3>
+                  <button
+                    onClick={() => removeAudioSegment(index)}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-full"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Delay (sec)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={segment.delay || 0}
-                    onChange={(e) => {
-                      const newSegments = [...audioSegments];
-                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                      newSegments[index].delay = value;
-                      setAudioSegments(newSegments);
-                    }}
-                    className="w-full p-2 border rounded"
-                  />
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Audio File
+                    </label>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => handleAudioUpload(index, e)}
+                      className="w-full p-2 border rounded bg-white"
+                    />
+                    {segment.file && (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-sm text-gray-500">
+                          Selected: {segment.file.name}
+                        </p>
+                        {segment.previewUrl && (
+                          <audio
+                            controls
+                            className="w-full h-8"
+                            src={segment.previewUrl}
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Delay
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={segment.delay || 0}
+                        onChange={(e) => {
+                          const newSegments = [...audioSegments];
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          newSegments[index].delay = value;
+                          setAudioSegments(newSegments);
+                        }}
+                        className="w-32 p-2 border rounded bg-white"
+                      />
+                      <span className="text-sm text-gray-500">seconds</span>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  onClick={() => removeAudioSegment(index)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-full mt-6"
-                >
-                  <X size={20} />
-                </button>
               </div>
             ))}
             <button
               onClick={addAudioSegment}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 w-full justify-center"
             >
               <Plus size={20} /> Add Audio Segment
             </button>
