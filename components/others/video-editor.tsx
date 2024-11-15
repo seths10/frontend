@@ -185,7 +185,7 @@ const VideoEditor = () => {
   return (
     <div className="max-w-5xl mx-auto p-10">
       <h1 className='absolute top-5 tracking-wide left-10 text-center text-black font-semibold text-2xl'>mochi.</h1>
-      <Card className="mb-6">
+      <Card className="mb-6 xs:mt-0 sm:mt-0 lg:mt-0 xl:mt-0 2xl:mt-[5rem]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload size={24} /> Upload Video
