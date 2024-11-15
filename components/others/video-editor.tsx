@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useRef } from 'react';
-import { Upload, Type, Mic, Save, X, Plus } from 'lucide-react';
+import { Upload, Type, Mic, Save, X, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 // import { Alert, AlertDescription } from '../ui/alert';
@@ -71,6 +71,14 @@ const VideoEditor = () => {
       }
       return newOverlays;
     });
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreviewUrl('');
+    // Reset other states if needed
+    setTextOverlays([{ text: '', startTime: 0, duration: 2, x: 100, y: 100 }]);
+    setAudioSegments([{ file: null, delay: 0 }]);
   };
 
   async function handleProcess() {
@@ -179,15 +187,26 @@ const VideoEditor = () => {
             />
             <label
               htmlFor="video-upload"
-              className="w-full h-40 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50"
+              className="w-full h-40 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 relative"
             >
               {videoPreviewUrl ? (
-                <video
-                  ref={videoRef}
-                  src={videoPreviewUrl}
-                  className="max-h-full"
-                  controls
-                />
+                <>
+                  <video
+                    ref={videoRef}
+                    src={videoPreviewUrl}
+                    className="max-h-full"
+                    controls
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeVideo();
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </>
               ) : (
                 <div className="text-center">
                   <Upload className="mx-auto mb-2" />
